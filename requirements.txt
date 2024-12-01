@@ -1,6 +1,6 @@
-streamlit==1.27.0
-transformers==4.33.0
-langdetect==1.0.9
-pytesseract==0.3.10
-Pillow==10.0.0
-torch==2.0.1
+streamlit
+transformers
+langdetect
+pytesseract
+Pillow
+torch
