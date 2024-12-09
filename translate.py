@@ -8,9 +8,22 @@ import re
 # Load the translation model
 @st.cache_resource
 def load_translation_model(model_name):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    return tokenizer, model
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        return tokenizer, model
+    except Exception as e:
+        st.error(f"Failed to load model {model_name}: {e}")
+        return None, None
+
+# Check if a model is available
+def is_model_available(model_name):
+    try:
+        AutoTokenizer.from_pretrained(model_name)
+        AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        return True
+    except Exception:
+        return False
 
 # Supported languages for translation
 language_mapping = {
@@ -23,12 +36,14 @@ language_mapping = {
     "ja": "Japanese",
     "ru": "Russian",
     "it": "Italian",
+    "sa": "Sanskrit",  # Added Sanskrit
 }
 
 # Available language pairs for translation (Helsinki-NLP models)
 supported_pairs = {
     "en-hi", "hi-en", "en-fr", "fr-en", "en-de", "de-en", "en-es", "es-en",
     "en-zh", "zh-en", "en-ja", "ja-en", "en-ru", "ru-en", "en-it", "it-en",
+    "en-sa", "sa-en",  # Added English-Sanskrit and Sanskrit-English
 }
 
 # Function to split text into paragraphs
@@ -107,24 +122,27 @@ if st.button("Translate"):
             try:
                 # Load specific translation model
                 translation_model = f"Helsinki-NLP/opus-mt-{detected_lang}-{target_lang}"
-                tokenizer, model = load_translation_model(translation_model)
+                if not is_model_available(translation_model):
+                    st.error(f"The model for {detected_lang} to {target_lang} translation is not available.")
+                else:
+                    tokenizer, model = load_translation_model(translation_model)
 
-                # Split text into paragraphs
-                paragraphs = split_text_into_paragraphs(text)
+                    # Split text into paragraphs
+                    paragraphs = split_text_into_paragraphs(text)
 
-                # Translate each paragraph
-                translated_paragraphs = []
-                for i, paragraph in enumerate(paragraphs):
-                    if paragraph.strip():  # Ignore empty paragraphs
-                        translated_paragraph = translate_paragraph(paragraph, model, tokenizer)
-                        translated_paragraphs.append(translated_paragraph)
+                    # Translate each paragraph
+                    translated_paragraphs = []
+                    for i, paragraph in enumerate(paragraphs):
+                        if paragraph.strip():  # Ignore empty paragraphs
+                            translated_paragraph = translate_paragraph(paragraph, model, tokenizer)
+                            translated_paragraphs.append(translated_paragraph)
 
-                # Combine paragraphs with line breaks
-                full_translation = "\n\n".join(translated_paragraphs)
+                    # Combine paragraphs with line breaks
+                    full_translation = "\n\n".join(translated_paragraphs)
 
-                # Display full translation
-                st.write(f"Translation in {language_mapping[target_lang]}:")
-                st.write(full_translation)
+                    # Display full translation
+                    st.write(f"Translation in {language_mapping[target_lang]}:")
+                    st.write(full_translation)
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
