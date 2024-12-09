@@ -1,0 +1,5 @@
+streamlit
+transformers
+langdetect
+pytesseract
+pillow
